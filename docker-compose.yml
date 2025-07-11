@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo
+    container_name: mongo-db
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: netflix-app
+    volumes:
+      - mongo-data:/data/db
+
+  api:
+    build:
+      context: ./api
+    container_name: api-server
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mongo
+    environment:
+      MONGO_URI: mongodb://mongo:27017/netflix-app
+    networks:
+      - app-network
+
+  client:
+    build:
+      context: ./client
+    container_name: react-client
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+    networks:
+      - app-network
+
+volumes:
+  mongo-data:
+
+networks:
+  app-network:
+    driver: bridge
