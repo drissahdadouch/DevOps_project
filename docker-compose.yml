@@ -11,9 +11,9 @@ services:
     volumes:
       - mongo-data:/data/db
 
-  api:
+  backend:
     build:
-      context: ./api
+      context: ./backend
     container_name: api-server
     ports:
       - "8000:8000"
@@ -24,14 +24,14 @@ services:
     networks:
       - app-network
 
-  client:
+  frontend:
     build:
-      context: ./client
+      context: ./frontend
     container_name: react-client
     ports:
       - "3000:80"
     depends_on:
-      - api
+      - backend
     networks:
       - app-network
 
