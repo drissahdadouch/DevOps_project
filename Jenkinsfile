@@ -16,7 +16,7 @@ pipeline{
                 }
                 dir('backend'){
                   sh ''' 
-                    docker build -t drissahd/devops_Backend .
+                    docker build -t drissahd/devops_backend .
                     '''  
                 }
             }
@@ -26,7 +26,7 @@ pipeline{
             steps{
                 withDockerRegistry(credentialsId: 'Dockerhub_token', url: 'https://index.docker.io/v1/'){
                sh' docker push drissahd/devops_frontend'
-               sh' docker push drissahd/devops_Backend'
+               sh' docker push drissahd/devops_backend'
               }
             }
         } 
