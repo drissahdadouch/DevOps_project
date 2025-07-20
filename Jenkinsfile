@@ -11,12 +11,12 @@ pipeline{
             steps{
                 dir('frontend'){
                     sh ''' 
-                    docker build -t drissahd/DevOps_frontend .
+                    docker build -t drissahd/devops_frontend .
                     '''
                 }
                 dir('backend'){
                   sh ''' 
-                    docker build -t drissahd/DevOps_Backend .
+                    docker build -t drissahd/devops_Backend .
                     '''  
                 }
             }
@@ -25,8 +25,8 @@ pipeline{
         stage("push docker images to Dockerhub"){
             steps{
                 withDockerRegistry(credentialsId: 'Dockerhub_token', url: 'https://index.docker.io/v1/'){
-               sh' docker push drissahd/DevOps_frontend'
-               sh' docker push drissahd/DevOps_Backend'
+               sh' docker push drissahd/devops_frontend'
+               sh' docker push drissahd/devops_Backend'
               }
             }
         } 
