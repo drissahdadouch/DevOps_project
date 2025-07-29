@@ -18,5 +18,28 @@ spec:
           ports:
             - containerPort: 8000
           env:
-            - name: MONGO_URI
-              value: mongodb://mongo:27017/netflix-app
+            - name: MONGO_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: MONGO_HOST
+            - name: MONGO_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: MONGO_PORT
+            - name: MONGO_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: MONGO_DB
+            - name: MONGO_USER
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret
+                  key: MONGO_USER
+            - name: MONGO_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret
+                  key: MONGO_PASS

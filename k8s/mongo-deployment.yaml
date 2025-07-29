@@ -18,8 +18,21 @@ spec:
           ports:
             - containerPort: 27017
           env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret
+                  key: MONGO_USER
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret
+                  key: MONGO_PASS
             - name: MONGO_INITDB_DATABASE
-              value: "netflix-app"
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: MONGO_DB
           volumeMounts:
             - name: mongo-storage
               mountPath: /data/db
