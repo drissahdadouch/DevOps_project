@@ -1,6 +1,8 @@
 pipeline {
     agent any
-
+    environment {
+        KUBECONFIG = "/var/lib/jenkins/.kube/config"
+    }
     stages {
         stage("checkout code") {
             steps {
@@ -51,6 +53,14 @@ pipeline {
                     // Apply Frontend Deployment and Service
                     sh 'kubectl apply -f k8s/frontend-deployment.yaml'
                     sh 'kubectl apply -f k8s/frontend-service.yaml'
+                    //Monitoring
+                    sh''' 
+                    kubectl apply -f kube-state-metrics.yaml
+                    kubectl apply -f node-exporter-daemonset.yaml
+                    kubectl apply -f cadvisor.yaml
+                    kubectl apply -f prometheus-config.yaml
+                    kubectl apply -f prometheus-deploy.yaml
+                    '''
                 }
             }
         }
