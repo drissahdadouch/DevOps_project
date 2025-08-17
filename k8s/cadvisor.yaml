@@ -27,6 +27,10 @@ spec:
     metadata:
       labels:
         app: cadvisor
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "8080"
     spec:
       containers:
         - name: cadvisor
@@ -43,7 +47,7 @@ spec:
               readOnly: true
             - name: var-run
               mountPath: /var/run
-              readOnly: true
+              readOnly: false   # allow mounting service account token
             - name: sys
               mountPath: /sys
               readOnly: true
@@ -63,3 +67,5 @@ spec:
         - name: containerd
           hostPath:
             path: /var/lib/containerd
+
+

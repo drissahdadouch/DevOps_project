@@ -1,31 +1,60 @@
 pipeline {
     agent any
+
     environment {
         KUBECONFIG = "/var/lib/jenkins/.kube/config"
     }
+
     stages {
-        stage("checkout code") {
+
+        stage("Checkout Code") {
             steps {
                 git branch: 'main', credentialsId: 'github_jenkins', url: 'https://github.com/drissahdadouch/DevOps_project.git'
             }
         }
 
-        stage("Build Docker images") {
+        stage("Unit Tests") {
             steps {
-                dir('frontend') {
-                    sh '''
-                        docker build -t drissahd/devops_frontend .
-                    '''
-                }
                 dir('backend') {
                     sh '''
-                        docker build -t drissahd/devops_backend .
+                        npm install
+                        npm test -- --ci --reporters=jest-junit --reporters=default
                     '''
+                }
+            }
+            post {
+                always {
+                    junit 'backend/reports/junit/*.xml'
+                    publishHTML(target: [
+                        reportDir: 'backend/reports/html',
+                        reportFiles: 'index.html',
+                        reportName: 'Unit Test Report'
+                    ])
                 }
             }
         }
 
-        stage("Push docker images to Dockerhub") {
+        stage("Build & Test in Parallel") {
+            parallel {
+                stage("Build Docker Images") {
+                    steps {
+                        dir('frontend') {
+                            sh 'docker build -t drissahd/devops_frontend .'
+                        }
+                        dir('backend') {
+                            sh 'docker build -t drissahd/devops_backend .'
+                        }
+                    }
+                }
+                stage("Extra Tests") {
+                    steps {
+                        sh 'echo "Run linting, security scans, or integration tests here"'
+                    }
+                }
+            }
+        }
+
+        stage("Push Docker Images to DockerHub") {
             steps {
                 withDockerRegistry(credentialsId: 'Dockerhub_token', url: 'https://index.docker.io/v1/') {
                     sh 'docker push drissahd/devops_frontend'
@@ -34,35 +63,43 @@ pipeline {
             }
         }
 
-        stage("Deploy to Kubernetes") {
+        stage("Deploy to Staging") {
             steps {
                 script {
-                    // Apply ConfigMap and Secret
-                    sh 'kubectl apply -f k8s/app-config.yaml'
-                    sh 'kubectl apply -f k8s/app-secret.yaml'
-
-                    // Apply MongoDB PVC, Deployment, Service
-                    sh 'kubectl apply -f k8s/mongo-pvc.yaml'
-                    sh 'kubectl apply -f k8s/mongo-deployment.yaml'
-                    sh 'kubectl apply -f k8s/mongo-service.yaml'
-
-                    // Apply Backend Deployment and Service
-                    sh 'kubectl apply -f k8s/backend-deployment.yaml'
-                    sh 'kubectl apply -f k8s/backend-service.yaml'
-
-                    // Apply Frontend Deployment and Service
-                    sh 'kubectl apply -f k8s/frontend-deployment.yaml'
-                    sh 'kubectl apply -f k8s/frontend-service.yaml'
-                    //Monitoring
-                    sh''' 
-                    kubectl apply -f kube-state-metrics.yaml
-                    kubectl apply -f node-exporter-daemonset.yaml
-                    kubectl apply -f cadvisor.yaml
-                    kubectl apply -f prometheus-config.yaml
-                    kubectl apply -f prometheus-deploy.yaml
-                    '''
+                    sh 'kubectl config use-context staging-cluster'
+                    sh 'kubectl apply -f k8s/staging/'
+                    sh 'kubectl rollout status deployment/frontend -n staging'
+                    sh 'kubectl rollout status deployment/backend -n staging'
                 }
             }
+        }
+
+        stage("Deploy to Production") {
+            steps {
+                script {
+                    sh 'kubectl config use-context production-cluster'
+                    sh 'kubectl apply -f k8s/production/'
+                    sh 'kubectl rollout status deployment/frontend -n production'
+                    sh 'kubectl rollout status deployment/backend -n production'
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            emailext(
+                subject: "✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: "Pipeline succeeded.\n\nCheck console output: ${env.BUILD_URL}",
+                to: "drissahd@gmail.com"
+            )
+        }
+        failure {
+            emailext(
+                subject: "❌ FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: "Pipeline failed.\n\nCheck console output: ${env.BUILD_URL}",
+                to: "drissahd@gmail.com"
+            )
         }
     }
 }
