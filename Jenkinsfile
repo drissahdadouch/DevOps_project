@@ -16,24 +16,24 @@ pipeline {
         stage("Unit Tests") {
             steps {
                 dir('backend') {
-                    // Install dependencies including devDependencies like jest-junit
                     sh '''
                         npm install --legacy-peer-deps
-                        npx jest --ci --reporters=default --reporters="jest-junit --output=backend/junit.xml --suiteName=BackendTests"
+                        # Run tests - jest-junit will read config from package.json
+                        npx jest --ci --reporters=default --reporters=jest-junit
                     '''
                 }
             }
             post {
                 always {
-                    // Publish JUnit XML report
+                    // Publish JUnit XML report (output configured in package.json)
                     junit 'backend/junit.xml'
 
-                    // Publish HTML report if exists
+                    // Publish HTML report (optional, will not fail if missing)
                     publishHTML(target: [
                         reportDir: 'backend/reports/html',
                         reportFiles: 'index.html',
                         reportName: 'Unit Test Report',
-                        allowMissing: true, // optional, does not fail if report is missing
+                        allowMissing: true,
                         keepAll: true
                     ])
                 }
