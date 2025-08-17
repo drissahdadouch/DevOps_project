@@ -16,20 +16,28 @@ pipeline {
         stage("Unit Tests") {
             steps {
                 dir('backend') {
+                    // Install dependencies including devDependencies like jest-junit
                     sh '''
                         npm install --legacy-peer-deps
-                        npm test -- --ci --reporters=jest-junit --reporters=default
+                        npx jest --ci --reporters=default --reporters=jest-junit
                     '''
                 }
             }
             post {
                 always {
-                    junit 'backend/reports/junit/*.xml'
-                    publishHTML(target: [
-                        reportDir: 'backend/reports/html',
-                        reportFiles: 'index.html',
-                        reportName: 'Unit Test Report'
-                    ])
+                    // Only record JUnit if files exist
+                    script {
+                        if (fileExists('backend/junit.xml')) {
+                            junit 'backend/junit.xml'
+                        }
+                        if (fileExists('backend/reports/html/index.html')) {
+                            publishHTML(target: [
+                                reportDir: 'backend/reports/html',
+                                reportFiles: 'index.html',
+                                reportName: 'Unit Test Report'
+                            ])
+                        }
+                    }
                 }
             }
         }
