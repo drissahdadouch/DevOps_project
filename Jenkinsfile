@@ -17,7 +17,7 @@ pipeline {
             steps {
                 dir('backend') {
                     sh '''
-                        npm install
+                        npm install --legacy-peer-deps
                         npm test -- --ci --reporters=jest-junit --reporters=default
                     '''
                 }
