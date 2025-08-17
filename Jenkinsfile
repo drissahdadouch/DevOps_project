@@ -19,25 +19,23 @@ pipeline {
                     // Install dependencies including devDependencies like jest-junit
                     sh '''
                         npm install --legacy-peer-deps
-                        npx jest --ci --reporters=default --reporters=jest-junit
+                        npx jest --ci --reporters=default --reporters="jest-junit --output=backend/junit.xml --suiteName=BackendTests"
                     '''
                 }
             }
             post {
                 always {
-                    // Only record JUnit if files exist
-                    script {
-                        if (fileExists('backend/junit.xml')) {
-                            junit 'backend/junit.xml'
-                        }
-                        if (fileExists('backend/reports/html/index.html')) {
-                            publishHTML(target: [
-                                reportDir: 'backend/reports/html',
-                                reportFiles: 'index.html',
-                                reportName: 'Unit Test Report'
-                            ])
-                        }
-                    }
+                    // Publish JUnit XML report
+                    junit 'backend/junit.xml'
+
+                    // Publish HTML report if exists
+                    publishHTML(target: [
+                        reportDir: 'backend/reports/html',
+                        reportFiles: 'index.html',
+                        reportName: 'Unit Test Report',
+                        allowMissing: true, // optional, does not fail if report is missing
+                        keepAll: true
+                    ])
                 }
             }
         }
